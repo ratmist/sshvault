@@ -37,12 +37,6 @@ pipx install git+https://github.com/ratmist/sshvault.git
 sshvault init
 ```
 
-### Initialize vault
-
-```bash
-sshvault init
-```
-
 ### Add new service
 
 ```bash
