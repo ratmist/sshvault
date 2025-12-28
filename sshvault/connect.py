@@ -4,7 +4,6 @@ import threading
 import time
 import os
 
-# Windows-only
 if os.name == "nt":
     import msvcrt
 else:
@@ -30,7 +29,6 @@ def connect_ssh(host: str, port: int, user: str, password: str):
 
     print("Connected. Interactive shell started. Ctrl+C to exit.\n")
 
-    # ---- Receive loop (same for all platforms) ----
     def recv_loop():
         while True:
             try:
@@ -48,7 +46,6 @@ def connect_ssh(host: str, port: int, user: str, password: str):
 
     try:
         while True:
-            # -------- Windows --------
             if os.name == "nt":
                 if msvcrt.kbhit():
                     ch = msvcrt.getwch()
@@ -60,7 +57,6 @@ def connect_ssh(host: str, port: int, user: str, password: str):
                     else:
                         channel.send(ch)
 
-            # -------- macOS / Linux --------
             else:
                 r, _, _ = select.select([sys.stdin], [], [], 0.05)
                 if r:
@@ -77,3 +73,4 @@ def connect_ssh(host: str, port: int, user: str, password: str):
         channel.close()
         client.close()
         print("\nConnection closed")
+
