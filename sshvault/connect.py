@@ -1,8 +1,14 @@
 import paramiko
 import sys
 import threading
-import msvcrt
 import time
+import os
+
+# Windows-only
+if os.name == "nt":
+    import msvcrt
+else:
+    import select
 
 
 def connect_ssh(host: str, port: int, user: str, password: str):
@@ -24,6 +30,7 @@ def connect_ssh(host: str, port: int, user: str, password: str):
 
     print("Connected. Interactive shell started. Ctrl+C to exit.\n")
 
+    # ---- Receive loop (same for all platforms) ----
     def recv_loop():
         while True:
             try:
@@ -37,20 +44,30 @@ def connect_ssh(host: str, port: int, user: str, password: str):
                 break
             time.sleep(0.01)
 
-    recv_thread = threading.Thread(target=recv_loop, daemon=True)
-    recv_thread.start()
+    threading.Thread(target=recv_loop, daemon=True).start()
 
     try:
         while True:
-            if msvcrt.kbhit():
-                ch = msvcrt.getwch()
+            # -------- Windows --------
+            if os.name == "nt":
+                if msvcrt.kbhit():
+                    ch = msvcrt.getwch()
 
-                if ch == "\r":
-                    channel.send("\n")
-                elif ch == "\x03":  
-                    break
-                else:
-                    channel.send(ch)
+                    if ch == "\r":
+                        channel.send("\n")
+                    elif ch == "\x03":  # Ctrl+C
+                        break
+                    else:
+                        channel.send(ch)
+
+            # -------- macOS / Linux --------
+            else:
+                r, _, _ = select.select([sys.stdin], [], [], 0.05)
+                if r:
+                    data = sys.stdin.read(1)
+                    if not data:
+                        break
+                    channel.send(data)
 
             time.sleep(0.01)
 
